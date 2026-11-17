@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/fetch_logs.sh
+        shell: bash
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --release
+      - run: cargo test --no-default-features --lib
+  pymavlink:
+    # Regenerates the reference numbers with pymavlink and fails if they drift.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/fetch_logs.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pymavlink==2.4.50
+      - run: |
+          python tools/pymavlink_reference.py tests/data/rust-mavlink-log.tlog > tests/data/rust-mavlink-log.pymavlink.json
+          python tools/pymavlink_reference.py tests/data/external/pymavlink-flight.tlog > tests/data/pymavlink-flight.pymavlink.json
+          python tools/pymavlink_reference.py tests/data/external/mprust-autotest.tlog > tests/data/mprust-autotest.pymavlink.json
+          python tools/gen_table.py
+          git diff --exit-code
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.70
+      - run: cargo build --no-default-features
+      - run: cargo build
+  no-std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf, wasm32-unknown-unknown
+      - run: cargo build --no-default-features --target thumbv7em-none-eabihf
+      - run: cargo build --target wasm32-unknown-unknown
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings

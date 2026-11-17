@@ -1,0 +1,28 @@
+[package]
+name = "mavlink-tlog"
+version = "0.1.0"
+authors = ["Matt Busel <matt@busel.dev>"]
+edition = "2021"
+rust-version = "1.70"
+description = "Read and write MAVLink .tlog telemetry logs (QGroundControl, Mission Planner, MAVProxy), with damaged-log recovery, checksum checks for every all.xml message, and per-sender packet loss statistics"
+license = "MIT"
+repository = "https://github.com/Mattbusel/mavlink-tlog"
+homepage = "https://github.com/Mattbusel/mavlink-tlog"
+documentation = "https://docs.rs/mavlink-tlog"
+readme = "README.md"
+keywords = ["mavlink", "tlog", "drone", "telemetry", "ardupilot"]
+categories = ["aerospace::drones", "aerospace::protocols", "parser-implementations", "no-std"]
+exclude = ["tests/data/*.json", "tests/data/external", ".github"]
+
+[features]
+default = ["std"]
+## Streaming `TlogReader` / `TlogWriter` over `std::io` and `LinkStats`.
+std = []
+
+[dependencies]
+
+[dev-dependencies]
+serde_json = "1"
+
+[package.metadata.docs.rs]
+all-features = true
