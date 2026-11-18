@@ -101,11 +101,15 @@ Also tested: pymavlink-encoded frames parse and re-encode byte for byte;
 rewriting a clean log reproduces it byte for byte; a flipped byte loses only
 its own record; injected garbage is skipped exactly; the streaming reader
 gives the same records and counters as the slice reader with reads of 1, 3,
-64 and 100,000 bytes; random input never panics. CI regenerates the pymavlink
+64 and 100,000 bytes; random input never panics; rust-mavlink 0.21 decodes
+every frame read from its own test log with the same header, and frames it
+writes come back byte for byte (`interop/rust-mavlink`). CI regenerates the pymavlink
 numbers and the message table and fails if they drift.
 
-See [docs/format.md](docs/format.md) for the file format and
-[docs/testing.md](docs/testing.md) for how to run the full suite.
+See [docs/format.md](docs/format.md) for the file format,
+[docs/testing.md](docs/testing.md) for how to run the full suite, and
+[docs/integration.md](docs/integration.md) for using it inside another
+project (features, the API to depend on, MSRV, versioning).
 
 ## License
 

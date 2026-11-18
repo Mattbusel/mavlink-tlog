@@ -1,6 +1,6 @@
 [package]
 name = "mavlink-tlog"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Matt Busel <matt@busel.dev>"]
 edition = "2021"
 rust-version = "1.70"
@@ -12,7 +12,7 @@ documentation = "https://docs.rs/mavlink-tlog"
 readme = "README.md"
 keywords = ["mavlink", "tlog", "drone", "telemetry", "ardupilot"]
 categories = ["aerospace::drones", "aerospace::protocols", "parser-implementations", "no-std"]
-exclude = ["tests/data/*.json", "tests/data/external", ".github"]
+exclude = ["tests/data/*.json", "tests/data/external", ".github", "interop"]
 
 [features]
 default = ["std"]

@@ -31,6 +31,14 @@ jobs:
           python tools/pymavlink_reference.py tests/data/external/mprust-autotest.tlog > tests/data/mprust-autotest.pymavlink.json
           python tools/gen_table.py
           git diff --exit-code
+  rust-mavlink:
+    # Frames read by this crate decode with rust-mavlink (the `mavlink`
+    # crate), and frames it writes are recorded and read back unchanged.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --manifest-path interop/rust-mavlink/Cargo.toml
   msrv:
     runs-on: ubuntu-latest
     steps:

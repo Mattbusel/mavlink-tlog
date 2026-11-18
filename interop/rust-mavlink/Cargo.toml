@@ -1,0 +1,15 @@
+# Checks that frames read and written by mavlink-tlog are exactly what
+# rust-mavlink (the `mavlink` crate) reads and writes. Not published; its
+# own workspace so the main crate's MSRV and dependency tree are untouched.
+# Run: cargo test --manifest-path interop/rust-mavlink/Cargo.toml
+[package]
+name = "mavlink-tlog-interop-rust-mavlink"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+mavlink-tlog = { path = "../.." }
+mavlink = { version = "0.21", default-features = false, features = ["std", "dialect-ardupilotmega"] }
+
+[workspace]

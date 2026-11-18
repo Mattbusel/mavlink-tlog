@@ -56,3 +56,7 @@ pub use tlog::{ReadOptions, ReadStats, Record, TlogSlice, TIMESTAMP_LEN};
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 struct ReadmeDoctests;
+
+#[cfg(all(doctest, feature = "std"))]
+#[doc = include_str!("../docs/integration.md")]
+struct IntegrationDoctests;
