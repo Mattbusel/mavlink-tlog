@@ -1,8 +1,10 @@
-# mavlink-tlog
+# mavlink-tlog: a damaged flight log is still evidence
 
 [![crates.io](https://img.shields.io/crates/v/mavlink-tlog.svg)](https://crates.io/crates/mavlink-tlog)
 [![docs.rs](https://docs.rs/mavlink-tlog/badge.svg)](https://docs.rs/mavlink-tlog)
 [![CI](https://github.com/Mattbusel/mavlink-tlog/actions/workflows/ci.yml/badge.svg)](https://github.com/Mattbusel/mavlink-tlog/actions/workflows/ci.yml)
+
+A telemetry log is often the only record of what a drone did, and logs come back damaged: cut frames, console text mixed in, a radio that dropped bytes. On a public SITL log with 5 cut-off frame headers, pymavlink 2.4.50, the reference Python parser, read each break as a bogus message from system 0 and dropped the 22 real frames around them; this crate skips the broken bytes and keeps those frames, and the test suite pins both counts. On clean logs the two agree on every number.
 
 Read and write MAVLink `.tlog` telemetry logs in Rust: the files
 QGroundControl, Mission Planner and MAVProxy save from a drone's telemetry
