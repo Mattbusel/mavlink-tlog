@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 (2026-11-20)
+
+Documentation and metadata only; no change to the library code.
+
+- README opens with the damaged-log result against pymavlink 2.4.50
+  (5 invented system-0 messages and 22 dropped frames there; none invented
+  and all 22 read here), and the crates.io description says the same.
+
 ## 0.1.1 (2026-11-17)
 
 Documentation and tests; no changes to the library code.

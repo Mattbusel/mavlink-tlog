@@ -4,7 +4,26 @@
 [![docs.rs](https://docs.rs/mavlink-tlog/badge.svg)](https://docs.rs/mavlink-tlog)
 [![CI](https://github.com/Mattbusel/mavlink-tlog/actions/workflows/ci.yml/badge.svg)](https://github.com/Mattbusel/mavlink-tlog/actions/workflows/ci.yml)
 
-A telemetry log is often the only record of what a drone did, and logs come back damaged: cut frames, console text mixed in, a radio that dropped bytes. On a public SITL log with 5 cut-off frame headers, pymavlink 2.4.50, the reference Python parser, read each break as a bogus message from system 0 and dropped the 22 real frames around them; this crate skips the broken bytes and keeps those frames, and the test suite pins both counts. On clean logs the two agree on every number.
+**Your telemetry tools make up messages when a log is damaged, and you
+can't tell which ones.** A reader that does not check each frame against its
+message definition turns broken bytes into data. On a public SITL log with
+cut-off frame headers, the reference Python reader (pymavlink 2.4.50)
+reports 5 messages from a system 0 that never existed (`UNKNOWN_658xx`)
+and drops the 22 real frames around the damage. That is fiction in a
+flight record, and it is the record you open after something went wrong. This crate checks every frame's checksum against all 353
+messages in MAVLink's `all.xml`, refuses the broken bytes, counts them, and
+reads the 22 real frames:
+
+| `autotest.tlog` (35,750 frames, console text mixed in) | pymavlink 2.4.50 | mavlink-tlog |
+|---|---|---|
+| Messages invented from damaged bytes | 5 (from system 0) | **0** |
+| Real frames next to the damage | 22 dropped | **22 read** |
+| Bytes it could not use | not reported | counted in `stats()` |
+| Undamaged logs (1,426 and 163,851 frames) | reference | identical on every count |
+
+If you investigate incidents, sign off flights or train models on
+telemetry, a reader that invents a sender is worse than one that stops.
+The pinned test: [How it is tested](#how-it-is-tested).
 
 Read and write MAVLink `.tlog` telemetry logs in Rust: the files
 QGroundControl, Mission Planner and MAVProxy save from a drone's telemetry

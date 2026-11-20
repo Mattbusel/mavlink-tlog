@@ -1,16 +1,16 @@
 [package]
 name = "mavlink-tlog"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Matt Busel <matt@busel.dev>"]
 edition = "2021"
 rust-version = "1.70"
-description = "A damaged flight log is still evidence: read and write MAVLink .tlog telemetry logs (QGroundControl, Mission Planner, MAVProxy), with damaged-log recovery checked against pymavlink, checksums for every all.xml message and per-sender packet loss."
+description = "Your telemetry tools make up messages when a log is damaged. On a damaged public log pymavlink reports 5 phantom system-0 messages and drops 22 real frames; mavlink-tlog invents none and reads the 22. MAVLink .tlog logs (QGroundControl, Mission Planner, MAVProxy) read and written with every frame checked against the CRC of all 353 all.xml messages, damaged bytes refused and counted, per-sender packet loss"
 license = "MIT"
 repository = "https://github.com/Mattbusel/mavlink-tlog"
 homepage = "https://github.com/Mattbusel/mavlink-tlog"
 documentation = "https://docs.rs/mavlink-tlog"
 readme = "README.md"
-keywords = ["mavlink", "tlog", "drone", "telemetry", "ardupilot"]
+keywords = ["mavlink", "tlog", "drone", "telemetry", "flight-log"]
 categories = ["aerospace::drones", "aerospace::protocols", "parser-implementations", "no-std"]
 exclude = ["tests/data/*.json", "tests/data/external", ".github", "interop"]
 
