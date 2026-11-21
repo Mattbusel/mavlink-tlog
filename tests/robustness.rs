@@ -228,3 +228,19 @@ fn hex(s: &str) -> Vec<u8> {
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
         .collect()
 }
+
+#[test]
+fn table_covers_messages_pymavlink_all_leaves_out() {
+    use mavlink_tlog::message_info;
+    for (id, crc_extra, name) in [
+        (8, 117, "LINK_NODE_STATUS"),
+        (80, 14, "COMMAND_CANCEL"),
+        (290, 251, "ESC_INFO"),
+        (291, 10, "ESC_STATUS"),
+        (300, 217, "PROTOCOL_VERSION"),
+        (410, 160, "EVENT"),
+    ] {
+        let info = message_info(id).unwrap_or_else(|| panic!("{name} missing"));
+        assert_eq!((info.crc_extra, info.name), (crc_extra, name));
+    }
+}

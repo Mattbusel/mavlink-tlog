@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3 (2026-11-21)
+
+- The message table now has 392 messages, up from 353. It was generated
+  from pymavlink 2.4.50, whose `all` dialect leaves out 39 messages that
+  MAVLink defines, among them ESC_INFO (290), ESC_STATUS (291),
+  PROTOCOL_VERSION (300), EVENT (410), COMMAND_CANCEL (80) and
+  LINK_NODE_STATUS (8). Frames of those messages were refused as unknown.
+- `tools/gen_table.py` now computes CRC_EXTRA straight from the MAVLink
+  XML. Every CRC_EXTRA in the old table matches the new one; eight
+  messages gained extension fields, so their maximum length grew.
+
 ## 0.1.2 (2026-11-20)
 
 Documentation and metadata only; no change to the library code.

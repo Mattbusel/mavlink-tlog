@@ -9,7 +9,7 @@
 //! message rates per sender).
 //!
 //! It works on raw frames and does not depend on a MAVLink dialect crate:
-//! the checksum seed (CRC_EXTRA) of all 353 messages in MAVLink's `all.xml`
+//! the checksum seed (CRC_EXTRA) of all 392 messages in MAVLink's `all.xml`
 //! is built in, so damaged records are detected and skipped. Hand the frame
 //! bytes to `mavlink` (rust-mavlink) or any other decoder to get typed
 //! messages.

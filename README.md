@@ -10,7 +10,7 @@ message definition turns broken bytes into data. On a public SITL log with
 cut-off frame headers, the reference Python reader (pymavlink 2.4.50)
 reports 5 messages from a system 0 that never existed (`UNKNOWN_658xx`)
 and drops the 22 real frames around the damage. That is fiction in a
-flight record, and it is the record you open after something went wrong. This crate checks every frame's checksum against all 353
+flight record, and it is the record you open after something went wrong. This crate checks every frame's checksum against all 392
 messages in MAVLink's `all.xml`, refuses the broken bytes, counts them, and
 reads the 22 real frames:
 
@@ -30,7 +30,7 @@ QGroundControl, Mission Planner and MAVProxy save from a drone's telemetry
 link (each MAVLink frame behind an 8 byte big-endian microsecond timestamp).
 
 * **Reads damaged logs.** Every frame's checksum is verified with the
-  CRC_EXTRA of all 353 messages in MAVLink's `all.xml` (built in, no dialect
+  CRC_EXTRA of all 392 messages in MAVLink's `all.xml` (built in, no dialect
   crate needed). A damaged record is skipped and reading continues at the
   next valid one; what was skipped is counted.
 * **Streams or borrows.** `TlogReader` reads any `std::io::Read` with a
