@@ -49,6 +49,14 @@ If you investigate incidents, sign off flights or train models on telemetry, a r
 
 It works on raw frames, so it pairs with any decoder: pass `record.frame.as_bytes()` to [`mavlink`](https://crates.io/crates/mavlink) (rust-mavlink), `mavio`, or your own code.
 
+## How it works: watch the bytes decode
+
+You are watching the real wire bytes of a real frame resolve into the decoded fields, the work this crate does: a real MAVLink 2 frame, the 0xFD magic, the msgid resolving to a message name, and the CRC with CRC_EXTRA validating. This crate carries the CRC_EXTRA table that makes the check correct.
+
+![A MAVLink 2 frame decoding byte by byte: the 0xFD magic, the msgid resolving to a message name, and the CRC validating against CRC_EXTRA](docs/bit-mavlink2-crc.gif)
+
+See the live piece in the gallery: [mavlink2-crc](https://mattbusel.github.io/drone-demos/bits/mavlink2-crc/).
+
 ## Use
 
 ```toml
