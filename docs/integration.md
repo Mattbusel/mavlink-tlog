@@ -15,10 +15,11 @@ mavlink-tlog = "0.1"
 
 | Feature | Default | Adds | Extra dependencies |
 |---|---|---|---|
-| `std` | yes | `TlogReader`, `TlogWriter` over `std::io`, `LinkStats` | none |
+| `std` | yes | `TlogReader`, `TlogWriter` over `std::io`, `LinkStats`, `SigningVerifier`, the `mavlink-tlog` binary | none |
 
 The crate has no dependencies. Without `std` you keep `TlogSlice`, frame
-parsing, `encode` and the checksum table, with no allocation; CI builds that
+parsing, `encode`, `encode_signed`, signature checks and the checksum table,
+with no allocation; CI builds that
 for `thumbv7em-none-eabihf` and `wasm32-unknown-unknown`.
 
 ## The integration in five lines
@@ -71,7 +72,9 @@ a separate CI job so the crate itself keeps no dependencies and its MSRV.
 | `TlogSlice` | the same over a byte slice or memory map, `no_std`, no allocation |
 | `TlogWriter` | writer over any `Write` |
 | `FrameRef`, `Header`, `encode`, `message_info`, `crc16`, `CrcPolicy` | one MAVLink 1 or 2 frame, building frames, the `all.xml` checksum table |
-| `LinkStats`, `SourceStats` | per-sender frames, loss, duplicates, rates |
+| `LinkStats`, `SourceStats` | per-sender frames, loss, duplicates, rates, longest dropout |
+| `FrameRef::verify_signature`, `encode_signed`, `SigningVerifier`, `SignatureStatus` | MAVLink 2 signing: verify, write, reject replays |
+| `TlogReader::follow`, `finish` | read a log that is still being written |
 
 Damaged input never panics: a bad record is skipped, counted in
 `ReadStats`, and reading continues at the next valid frame.

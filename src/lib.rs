@@ -5,8 +5,10 @@
 //! 8 byte big-endian timestamp in microseconds since the Unix epoch. This
 //! crate reads them (from memory with [`TlogSlice`], or streaming from any
 //! `Read` with [`TlogReader`]), writes them ([`TlogWriter`]), and measures
-//! the link ([`LinkStats`]: frames, sequence-gap loss, duplicates and
-//! message rates per sender).
+//! the link ([`LinkStats`]: frames, sequence-gap loss, duplicates,
+//! message rates and the longest silence per sender) and checks MAVLink 2
+//! signatures ([`SigningVerifier`]: forged, replayed and unsigned frames).
+//! [`TlogReader::follow`] reads a log that is still being written.
 //!
 //! It works on raw frames and does not depend on a MAVLink dialect crate:
 //! the checksum seed (CRC_EXTRA) of all 392 messages in MAVLink's `all.xml`
@@ -39,6 +41,7 @@
 pub mod frame;
 #[cfg(feature = "std")]
 mod io;
+pub mod signing;
 #[cfg(feature = "std")]
 mod stats;
 mod table;
@@ -49,6 +52,9 @@ pub use frame::{
 };
 #[cfg(feature = "std")]
 pub use io::{OwnedRecord, TlogReader, TlogWriter};
+#[cfg(feature = "std")]
+pub use signing::SigningVerifier;
+pub use signing::{encode_signed, Signature, SignatureStatus, SIGNING_EPOCH_UNIX_US};
 #[cfg(feature = "std")]
 pub use stats::{LinkStats, SourceStats};
 pub use tlog::{ReadOptions, ReadStats, Record, TlogSlice, TIMESTAMP_LEN};

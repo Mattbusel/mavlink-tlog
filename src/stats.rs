@@ -34,6 +34,13 @@ pub struct SourceStats {
     pub last_us: u64,
     /// Frames per message id.
     pub by_msg_id: BTreeMap<u32, u64>,
+    /// Longest time between two consecutive frames of this sender, in
+    /// microseconds: the worst link dropout. Frames whose timestamp goes
+    /// backwards do not count.
+    pub longest_gap_us: u64,
+    /// Timestamp of the frame that ended the longest gap (the gap is
+    /// `longest_gap_end_us - longest_gap_us ..= longest_gap_end_us`).
+    pub longest_gap_end_us: u64,
     last_seq: Option<u8>,
 }
 
@@ -46,6 +53,15 @@ impl SourceStats {
         } else {
             self.lost as f64 / total as f64
         }
+    }
+
+    /// Average rate over all of this sender's frames in Hz.
+    pub fn rate_total_hz(&self) -> Option<f64> {
+        let span = self.last_us.checked_sub(self.first_us)?;
+        if span == 0 || self.received < 2 {
+            return None;
+        }
+        Some((self.received - 1) as f64 / (span as f64 / 1e6))
     }
 
     /// Average rate of one message id in Hz over this sender's time span.
@@ -88,6 +104,13 @@ impl LinkStats {
                 ..SourceStats::default()
             });
         s.received += 1;
+        if s.received > 1 && timestamp_us > s.last_us {
+            let gap = timestamp_us - s.last_us;
+            if gap > s.longest_gap_us {
+                s.longest_gap_us = gap;
+                s.longest_gap_end_us = timestamp_us;
+            }
+        }
         s.last_us = s.last_us.max(timestamp_us);
         *s.by_msg_id.entry(frame.msg_id()).or_insert(0) += 1;
         let seq = frame.seq();

@@ -45,6 +45,7 @@ pub struct TlogReader<R> {
     buf: Vec<u8>,
     start: usize,
     eof: bool,
+    follow: bool,
     opts: ReadOptions,
     prev_ts: Option<u64>,
     stats: ReadStats,
@@ -63,10 +64,64 @@ impl<R: Read> TlogReader<R> {
             buf: Vec::with_capacity(CHUNK),
             start: 0,
             eof: false,
+            follow: false,
             opts,
             prev_ts: None,
             stats: ReadStats::default(),
         }
+    }
+
+    /// A reader for a log that is still being written (a live capture
+    /// from QGroundControl, MAVProxy or your own [`TlogWriter`]).
+    ///
+    /// At the end of the input, [`next_record`](Self::next_record) returns
+    /// `Ok(None)` but keeps a partly written final record instead of
+    /// counting it as damage, and the next call reads on from where the
+    /// input ended. Poll it as the file grows; call
+    /// [`finish`](Self::finish) when the writer is done to account for
+    /// bytes that never became a record.
+    ///
+    /// ```no_run
+    /// use mavlink_tlog::TlogReader;
+    ///
+    /// let mut log = TlogReader::follow(std::fs::File::open("live.tlog")?);
+    /// loop {
+    ///     while let Some(rec) = log.next_record()? {
+    ///         println!("{} {:?}", rec.timestamp_us, rec.frame.message_name());
+    ///     }
+    ///     std::thread::sleep(std::time::Duration::from_millis(200));
+    /// }
+    /// # Ok::<(), std::io::Error>(())
+    /// ```
+    pub fn follow(inner: R) -> Self {
+        Self::follow_with_options(inner, ReadOptions::default())
+    }
+
+    /// [`follow`](Self::follow) with the given options.
+    pub fn follow_with_options(inner: R, opts: ReadOptions) -> Self {
+        let mut r = Self::with_options(inner, opts);
+        r.follow = true;
+        r
+    }
+
+    /// Stops following: the input is complete. Later calls to
+    /// [`next_record`](Self::next_record) read what is left and count a
+    /// partial final record in [`ReadStats::truncated_tail`].
+    pub fn finish(&mut self) {
+        self.follow = false;
+        self.eof = false;
+    }
+
+    /// `true` while the reader waits for more input at the end of a live
+    /// log.
+    pub fn is_following(&self) -> bool {
+        self.follow
+    }
+
+    /// Bytes read from the input but not yet returned as a record: in
+    /// follow mode, the partly written record at the end of the input.
+    pub fn pending_bytes(&self) -> usize {
+        self.buf.len() - self.start
     }
 
     /// What has been skipped so far.
@@ -114,6 +169,12 @@ impl<R: Read> TlogReader<R> {
                 Attempt::Incomplete => {
                     if self.fill()? {
                         continue;
+                    }
+                    if self.follow {
+                        // The writer may not have finished this record yet:
+                        // keep it and read on next time.
+                        self.eof = false;
+                        return Ok(None);
                     }
                     let rest = self.buf.len() - self.start;
                     if rest > TIMESTAMP_LEN + 1 {

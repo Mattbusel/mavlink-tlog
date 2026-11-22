@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.4 (2026-11-22)
+
+New features, all additive; nothing existing changed.
+
+- MAVLink 2 signing: `FrameRef::signature_fields` and
+  `FrameRef::verify_signature`, `encode_signed` to write signed frames,
+  and `SigningVerifier`, which also rejects replays per (system,
+  component, link id) stream. Checked against frames pymavlink 2.4.50
+  signed. Built-in SHA-256; still no dependencies and `no_std` (the
+  verifier needs `std`).
+- `TlogReader::follow` reads a log that is still being written: at the
+  end of the input a partly written record is kept rather than counted as
+  damage. `finish`, `is_following` and `pending_bytes` go with it.
+- `SourceStats::longest_gap_us` and `longest_gap_end_us` (the worst
+  dropout per sender) and `SourceStats::rate_total_hz`.
+- `mavlink-tlog` command line tool: `stats`, `csv`, `json` (with
+  `--follow`), `slice` (cut a time window or sender into a new .tlog) and
+  `signing`, with time, sender and message filters.
+
 ## 0.1.3 (2026-11-21)
 
 - The message table now has 392 messages, up from 353. It was generated
