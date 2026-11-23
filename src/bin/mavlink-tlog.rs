@@ -1,6 +1,7 @@
 //! `mavlink-tlog`: inspect, export, cut and check MAVLink .tlog files.
 //!
 //! ```text
+//! mavlink-tlog report  FILE [--key HEX]
 //! mavlink-tlog stats   FILE [filters]
 //! mavlink-tlog csv     FILE [filters] [--follow]
 //! mavlink-tlog json    FILE [filters] [--follow]
@@ -15,14 +16,15 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use mavlink_tlog::{
-    message_info, FrameRef, LinkStats, SignatureStatus, SigningVerifier, TlogReader, TlogWriter,
-    Version,
+    message_info, FlightReport, FrameRef, LinkStats, SignatureStatus, SigningVerifier, TlogReader,
+    TlogWriter, Verdict, Version,
 };
 
 const USAGE: &str = "\
 mavlink-tlog: inspect, export, cut and check MAVLink .tlog files
 
 USAGE:
+  mavlink-tlog report  FILE [--key HEX]         tamper verdict and flight report (start with this)
   mavlink-tlog stats   FILE [filters]           senders, loss, rates, longest dropout, damage
   mavlink-tlog csv     FILE [filters] [--follow] one CSV row per frame on stdout
   mavlink-tlog json    FILE [filters] [--follow] one JSON object per frame per line on stdout
@@ -150,6 +152,7 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
     let result = match args.cmd.as_str() {
+        "report" => report(args),
         "stats" => stats(args),
         "csv" => export(args, false),
         "json" => export(args, true),
@@ -195,6 +198,24 @@ fn hex(bytes: &[u8]) -> String {
         let _ = write!(s, "{b:02x}");
     }
     s
+}
+
+fn report(a: Args) -> io::Result<()> {
+    let path = &a.files[0];
+    let bytes = std::fs::read(path)?;
+    let report = match a.key {
+        Some(key) => FlightReport::from_bytes_with_key(&bytes, key),
+        None => FlightReport::from_bytes(&bytes),
+    };
+    println!("{path}");
+    print!("{report}");
+    io::stdout().flush()?;
+    // A scriptable exit code for a chain-of-custody check: 3 when the log
+    // shows signs of tampering, 0 otherwise.
+    if report.verdict() == Verdict::Tampered {
+        std::process::exit(3);
+    }
+    Ok(())
 }
 
 fn stats(mut a: Args) -> io::Result<()> {

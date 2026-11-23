@@ -9,6 +9,9 @@
 //! message rates and the longest silence per sender) and checks MAVLink 2
 //! signatures ([`SigningVerifier`]: forged, replayed and unsigned frames).
 //! [`TlogReader::follow`] reads a log that is still being written.
+//! [`FlightReport`] answers "was this log tampered with, and what does it
+//! say?" in one pass: an integrity verdict (intact, signed, damaged, or
+//! reordered/forged, with the time window) and a concise flight report.
 //!
 //! It works on raw frames and does not depend on a MAVLink dialect crate:
 //! the checksum seed (CRC_EXTRA) of all 392 messages in MAVLink's `all.xml`
@@ -41,6 +44,8 @@
 pub mod frame;
 #[cfg(feature = "std")]
 mod io;
+#[cfg(feature = "std")]
+mod report;
 pub mod signing;
 #[cfg(feature = "std")]
 mod stats;
@@ -52,6 +57,8 @@ pub use frame::{
 };
 #[cfg(feature = "std")]
 pub use io::{OwnedRecord, TlogReader, TlogWriter};
+#[cfg(feature = "std")]
+pub use report::{Anomaly, AnomalyKind, FlightReport, Integrity, SenderSummary, Verdict};
 #[cfg(feature = "std")]
 pub use signing::SigningVerifier;
 pub use signing::{encode_signed, Signature, SignatureStatus, SIGNING_EPOCH_UNIX_US};

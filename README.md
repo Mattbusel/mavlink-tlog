@@ -42,10 +42,11 @@ If you investigate incidents, sign off flights or train models on telemetry, a r
 * **Reads damaged logs.** Every frame's checksum is verified with the CRC_EXTRA of all 392 messages in MAVLink's `all.xml` (built in, no dialect crate needed). A damaged record is skipped and reading continues at the next valid one; what was skipped is counted.
 * **Streams or borrows.** `TlogReader` reads any `std::io::Read` with a 64 KiB buffer; `TlogSlice` walks a byte slice (or a memory map) without allocating and works in `no_std`.
 * **Writes logs.** `TlogWriter` produces files QGroundControl and pymavlink open, and `encode` builds MAVLink 1 and 2 frames with correct checksums.
+* **Answers "was this log tampered with, and what does it say?"** `FlightReport::from_bytes` makes one pass and returns an integrity `Verdict` (`Intact`, `IntactSigned`, `Damaged`, or `Tampered`, with the time window and the anomalies behind it) and a concise flight report (first and last time, duration, rate, every sender, loss, worst dropout, messages). It is careful about what it claims: a timestamp that steps backwards (a logger never writes out of receive order) or a signature that fails against the real key is tampering; a bad checksum, which radio noise also causes, is damage with its counts, not proof. For an investigator or a chain-of-custody review.
 * **Measures the link.** `LinkStats` gives frames, sequence-gap loss, duplicates, out of order frames, per-message rates and the longest silence (worst dropout, and when it ended) for every sender (system id, component id).
 * **Checks MAVLink 2 signing.** `FrameRef::verify_signature` checks a frame against your 32 byte key, `SigningVerifier` also rejects replays per (system, component, link id) stream the way a receiver must, and `encode_signed` writes signed frames. Verified byte for byte against frames pymavlink 2.4.50 signed. SHA-256 is built in, still zero dependencies and `no_std`.
 * **Follows a live capture.** `TlogReader::follow` reads a log a ground station is still writing: a half-written last record is kept, not counted as damage, and finished on the next read.
-* **Has a command line tool.** `mavlink-tlog` prints stats, exports CSV or JSON lines, cuts a time window or a sender out into a new .tlog, and reports forged, replayed and unsigned frames.
+* **Has a command line tool.** `mavlink-tlog` reports the tamper verdict and flight report, prints stats, exports CSV or JSON lines, cuts a time window or a sender out into a new .tlog, and reports forged, replayed and unsigned frames.
 
 It works on raw frames, so it pairs with any decoder: pass `record.frame.as_bytes()` to [`mavlink`](https://crates.io/crates/mavlink) (rust-mavlink), `mavio`, or your own code.
 
@@ -94,6 +95,23 @@ tlog.write_frame_now(&frame)?;
 # Ok::<(), std::io::Error>(())
 ```
 
+Is this log trustworthy, and what does it say? One call gives the verdict and the flight report:
+
+```rust
+use mavlink_tlog::{FlightReport, Verdict};
+
+let bytes = std::fs::read("tests/data/rust-mavlink-log.tlog").unwrap();
+let report = FlightReport::from_bytes(&bytes); // or from_bytes_with_key(&bytes, key)
+match report.verdict() {
+    Verdict::Tampered => {
+        let (t1, t2) = report.integrity.tamper_window().unwrap();
+        println!("shows signs of tampering between {t1} and {t2}");
+    }
+    v => println!("{}", v.phrase()), // "intact", "intact and signed", or "damaged ..."
+}
+println!("{report}"); // the full flight report for a person
+```
+
 Checking signatures in a log (for example: did any unsigned command reach the vehicle while signing was on?):
 
 ```rust
@@ -130,6 +148,8 @@ loop {
 
 ```text
 $ cargo install mavlink-tlog
+$ mavlink-tlog report  flight.tlog                          # tamper verdict + flight report; exits 3 if tampered
+$ mavlink-tlog report  flight.tlog --key 000102...1f        # also verify MAVLink 2 signatures
 $ mavlink-tlog stats   flight.tlog
 $ mavlink-tlog csv     flight.tlog --msg GLOBAL_POSITION_INT --from 600 --to 660 > pos.csv
 $ mavlink-tlog json    live.tlog --follow --sys 1          # JSON lines as the log grows
@@ -164,6 +184,8 @@ The tests compare against **pymavlink** (2.4.50, `all` dialect), the reference P
 | MissionPlannerRust `autotest.tlog`, SITL with console text mixed in | 35,750 frames | see below |
 
 On the third log the two disagree, and the difference is explained in the test: the file has 5 places where a frame header was cut off and a whole frame follows (`fd 09 00`, then `fd 09 00 00 ...`). pymavlink parses each of those as a bogus message from system 0 (`UNKNOWN_658xx`) and drops the 22 real frames around the damage; this crate skips the broken bytes and reads those frames. The test pins both numbers: pymavlink's count minus the 5 bogus messages plus the 22 recovered frames, per message id.
+
+The integrity verdict and flight report are tested on the real shipped log (it reads `Intact`, and its frame and per-sender counts match `LinkStats` over the same log) and on copies of it with one documented change each: two frames swapped (caught as a single backward time step, `Tampered`), a flipped payload byte (bad checksum, `Damaged`), a fully signed log (`IntactSigned`), and a payload edit with the checksum repaired under a signed frame (forged signature, `Tampered`). The `report` command is run on the log by the test suite and its exit code is checked.
 
 Signing is tested against frames pymavlink 2.4.50 signed (verify, and `encode_signed` reproduces them byte for byte), a tampered frame with a fixed-up checksum, replays per stream, and SHA-256 against the FIPS 180-4 vectors. The follow reader is fed the test log in pieces of 1 to 4096 bytes and must return the same records as the slice reader with nothing skipped. The CLI is run on the test log by the test suite.
 

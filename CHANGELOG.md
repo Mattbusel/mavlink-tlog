@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.5 (2026-11-22)
+
+New feature, additive; nothing existing changed.
+
+- `FlightReport` answers one question an investigator or a chain-of-custody
+  review actually asks: **was this telemetry log tampered with, and what
+  does it say?** One pass over a `.tlog` ([`FlightReport::from_bytes`], or
+  `from_bytes_with_key` to also check MAVLink 2 signatures) returns:
+  - an integrity `Verdict`: `Intact`, `IntactSigned` (every signed frame
+    verified against the key), `Damaged` (bad checksums or unparsable
+    bytes: corruption or edits), or `Tampered`, with `Integrity::anomalies`
+    and `tamper_window()` so you can say "shows signs of tampering between
+    T1 and T2" or "intact and signed". The verdict is deliberate about its
+    claim: a timestamp that steps backwards (a logger never writes out of
+    receive order) and a signature that fails against the real key are
+    reported as tampering; a bad checksum, which radio noise also causes,
+    is reported as damage with its counts, not as proof.
+  - a concise flight report: first and last time, duration, overall and
+    per-sender rate, every system seen with its frames, loss, duplicates,
+    out-of-order count and worst dropout, and the messages it sent.
+- `mavlink-tlog report FILE [--key HEX]` prints that verdict and report and
+  exits 3 when the log shows signs of tampering, for a scriptable check.
+- Tested against the real shipped log (reads `Intact`) and copies of it with
+  one documented change each: two frames swapped (detected as a single time
+  regression and `Tampered`), a flipped payload byte (bad checksum,
+  `Damaged`), a fully signed log (`IntactSigned`), and a payload edit with
+  the checksum repaired under a signed frame (forged signature, `Tampered`).
+
 ## 0.1.4 (2026-11-22)
 
 New features, all additive; nothing existing changed.

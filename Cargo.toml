@@ -1,10 +1,10 @@
 [package]
 name = "mavlink-tlog"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Matt Busel <matt@busel.dev>"]
 edition = "2021"
 rust-version = "1.70"
-description = "Your telemetry tools make up messages when a log is damaged. On a damaged public log pymavlink reports 5 phantom system-0 messages and drops 22 real frames; mavlink-tlog invents none and reads the 22. MAVLink .tlog logs (QGroundControl, Mission Planner, MAVProxy) read and written with every frame checked against the CRC of all 392 all.xml messages, damaged bytes refused and counted, per-sender packet loss and dropouts, MAVLink 2 signature and replay checks, live-capture follow mode, CSV and JSON export CLI"
+description = "Your telemetry tools make up messages when a log is damaged. On a damaged public log pymavlink reports 5 phantom system-0 messages and drops 22 real frames; mavlink-tlog invents none and reads the 22. MAVLink .tlog logs (QGroundControl, Mission Planner, MAVProxy) read and written with every frame checked against the CRC of all 392 all.xml messages, damaged bytes refused and counted, per-sender packet loss and dropouts, MAVLink 2 signature and replay checks, live-capture follow mode, CSV and JSON export CLI, and a one-pass integrity verdict (intact, signed, damaged, or reordered/forged, with the time window) plus a flight report for chain-of-custody review"
 license = "MIT"
 repository = "https://github.com/Mattbusel/mavlink-tlog"
 homepage = "https://github.com/Mattbusel/mavlink-tlog"
